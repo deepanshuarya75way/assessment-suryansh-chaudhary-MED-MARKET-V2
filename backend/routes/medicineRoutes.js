@@ -6,8 +6,9 @@ import {
   getVendorInventory, 
   getSuggestions, 
   deleteVendorInventory,
-  getMasterMedicines, // 🚀 FIX: IMPORTED
-  translateTexts
+  getMasterMedicines, 
+  translateTexts,
+  getSubstitutes
 } from '../controllers/medicineController.js';
 import { protect, vendorOnly } from '../middleware/authMiddleware.js';
 import { translateLimiter } from '../middleware/rateLimit.js';
@@ -18,9 +19,10 @@ router.get('/search', searchAndCompare);
 router.get('/stores', getNearbyStores);
 router.get('/vendor-inventory', protect, vendorOnly, getVendorInventory);
 router.get('/suggestions', getSuggestions);
-router.get('/master', getMasterMedicines); // 🚀 FIX: DICTIONARY ROUTE
+router.get('/master', getMasterMedicines); 
 router.post('/master', protect, vendorOnly, addMasterMedicine);
 router.delete('/vendor-inventory/:medicineId', protect, vendorOnly, deleteVendorInventory);
 router.post('/translate', translateLimiter, translateTexts);
+router.get('/:id/substitutes', getSubstitutes);
 
 export default router;

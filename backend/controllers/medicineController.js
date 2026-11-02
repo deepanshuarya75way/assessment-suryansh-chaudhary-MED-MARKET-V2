@@ -90,10 +90,7 @@ export const deleteVendorInventory = async (req, res) => {
   }
 };
 
-// 🚀 SEARCH & COMPARE
-// 🚀 FIX: AI auto-create-medicine block REMOVED. Previously, an unmatched search would let
-// Groq AI verify and PERMANENTLY save a new Medicine document — even with zero vendor
-// involvement. Now an unmatched search simply returns "No medicines found."
+
 export const searchAndCompare = async (req, res) => {
   try {
     let { q: searchQuery, city } = req.query; 
@@ -229,5 +226,36 @@ Input: ${JSON.stringify(texts)}`;
   } catch (error) {
     console.error('Translation error:', error.message);
     res.status(200).json({ translations: req.body.texts || [] });
+  }
+};
+export const getSubstitutes = async (req,res) => {
+  try {
+    const med= await Medicine.findById(req.params.id);
+    if(!med) return res.status(404).json({ message:'Medicine not found'});
+    const sameSalt= await Medicine.find({ composition:med.composition});
+    const ids= sameSalt.map(m => m._id);
+    const all = await Inventory.find ({medicineId: {$in:ids}, stock: {$gt:0}}).populate('storeId','storeName isVerified');
+    const valid = all.filter(inv => inv.storeId && inv.storeId.isVerified && !inv.isBlocked);
+    const own = valid.filter(inv => inv.medicineId.equals(med._id)).map(inv => inv.price);
+    const basePrice= own.length > 0? Math.min(...own) : med.defaultPrice;
+    const substitutes = [];
+    for(const alt of sameSalt){
+      if(alt._id.equals(med._id)) continue;
+      const list = valid.filter(inv => inv.medicineId.equals(alt._id)).sort((a,b) => a.price - b.price);
+      if(list.length === 0) continue;
+      const best= list[0];
+      substitutes.push({
+        medicineId: alt._id, name: alt.name, manufacturer: alt.manufacturer,
+        imageUrl:alt.imageUrl,prescriptionRequired: alt.prescriptionRequired,
+        inventoryId: best._id, storeId: best.storeId._id, storeName:best.storeId.storeName,
+        price: best.price, stock:best.stock,
+        savings:Math.round(((basePrice - best.price) / basePrice) * 100)
+      });
+
+    }
+    substitutes.sort((a,b) => a.price-b.price);
+    res.json({ basePrice, outOfStock : own.length === 0, substitutes});
+  } catch(error){
+    res.status(500).json({ message: error.message});
   }
 };
