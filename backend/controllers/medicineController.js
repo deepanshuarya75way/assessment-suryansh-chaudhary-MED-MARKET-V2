@@ -133,7 +133,7 @@ export const searchAndCompare = async (req, res) => {
     // 🚀 Sort ascending by price — this is what makes the cheapest store appear first in each tab
     inventoryResults.sort((a, b) => a.price - b.price);
 
-    const formatResults = (medicinesList) => {
+    const formatResults = (medicinesList, keepEmpty = false) => {
       return medicinesList.map(med => {
         const availableStores = inventoryResults.filter(
           inv => inv.medicineId && inv.medicineId._id.toString() === med._id.toString() && inv.stock > 0 
@@ -156,10 +156,10 @@ export const searchAndCompare = async (req, res) => {
             }))
           }
         };
-      }).filter(item => item.stores.local.length > 0 || item.stores.online.length > 0); 
+      }).filter(item => keepEmpty || item.stores.online.length > 0 || item.stores.online.length > 0); 
     };
 
-    res.status(200).json({ exactMatches: formatResults(exactMedicines), alternatives: formatResults(alternativeMedicines) });
+    res.status(200).json({ exactMatches: formatResults(exactMedicines, true), alternatives: formatResults(alternativeMedicines) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
