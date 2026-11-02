@@ -43,7 +43,7 @@ export default function SubstituteList({ medicineId}) {
           </div>
           <div className="flex items-center gap-3">
           <span className="font-bold">Rs.{s.price}</span>
-          <span className="text-xs text-slate-400 line-through">Rs.{data.basePrice}</span>
+          {s.savings > 0 && <span className="text-xs text-slate-400 line-through">Rs.{data.basePrice}</span>}
           {s.savings > 0 && <span className="text-green-600 text-xs font-bold"> Save {s.savings}%</span>}
           <button onClick={() => add(s)} className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Add</button>
           
